@@ -51,7 +51,7 @@ public class Block implements Serializable {
         return index;
     }
 
-    public String getPrev_hash() {
+    public String getPreviousHash() {
         return prevHash;
     }
 

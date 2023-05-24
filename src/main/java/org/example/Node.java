@@ -29,7 +29,7 @@ public class Node {
 
     public void createBlock() {
         if (blockchain.isEmpty()) throw new NullPointerException();
-        Block prev = getPrevBlock();
+        Block prev = getPreviousBlock();
         if (prev == null) throw new NullPointerException();
         long index = prev.getIndex() + 1;
         String data = RandomStringUtils.random(256, true, true);
@@ -44,19 +44,39 @@ public class Node {
         });
     }
 
-    private Block getPrevBlock() {
+    private Block getPreviousBlock() {
         if (blockchain.isEmpty()) return null;
         return blockchain.get(blockchain.size() - 1);
     }
 
     public boolean addBlock(Block block) {
-        Block prev = getPrevBlock();
-        if (prev != null && Objects.equals(block.getPrev_hash(), prev.getHash())
+        Block prev = getPreviousBlock();
+        if (prev != null && Objects.equals(block.getPreviousHash(), prev.getHash())
                 && block.getIndex() == prev.getIndex() + 1) {
             blockchain.add(block);
             return true;
         }
         return false;
+    }
+
+    public void start() {
+        scheduledThreadPoolExecutor.execute(() -> {
+            try {
+                serverSocket = new ServerSocket(port);
+                while (true) {
+                    new Server(Node.this, serverSocket.accept()).start();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        nodes.forEach((key, value) -> {
+            try {
+                sendMessage(STATUS.REQ, key, value, null);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private boolean hostInMap(String hostname) {
